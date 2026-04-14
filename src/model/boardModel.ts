@@ -208,7 +208,12 @@ export function deleteCard(data: BoardData, cardId: string): BoardData {
   if (!card) return data
 
   const column = data.columns[card.columnId]
-  const { [cardId]: _, ...remainingCards } = data.cards
+  const remainingCards: Record<string, Card> = {}
+  for (const key in data.cards) {
+    if (key !== cardId) {
+      remainingCards[key] = data.cards[key]
+    }
+  }
 
   return {
     ...data,
