@@ -245,3 +245,113 @@ export function editCardTitle(
     },
   }
 }
+
+export function deleteBoard(data: BoardData, boardId: string): BoardData {
+  const board = data.boards[boardId]
+  if (!board) return data
+
+  const remainingBoards: Record<string, Board> = {}
+  for (const key in data.boards) {
+    if (key !== boardId) {
+      remainingBoards[key] = data.boards[key]
+    }
+  }
+
+  const remainingColumns: Record<string, Column> = {}
+  for (const key in data.columns) {
+    if (data.columns[key].boardId !== boardId) {
+      remainingColumns[key] = data.columns[key]
+    }
+  }
+
+  const cardIdsToDelete = new Set<string>()
+  for (const key in data.cards) {
+    if (!remainingColumns[data.cards[key].columnId]) {
+      cardIdsToDelete.add(key)
+    }
+  }
+
+  const remainingCards: Record<string, Card> = {}
+  for (const key in data.cards) {
+    if (!cardIdsToDelete.has(key)) {
+      remainingCards[key] = data.cards[key]
+    }
+  }
+
+  return {
+    ...data,
+    boards: remainingBoards,
+    columns: remainingColumns,
+    cards: remainingCards,
+    boardIds: data.boardIds.filter((id) => id !== boardId),
+  }
+}
+
+export function editBoardTitle(
+  data: BoardData,
+  boardId: string,
+  title: string
+): BoardData {
+  const board = data.boards[boardId]
+  if (!board) return data
+
+  return {
+    ...data,
+    boards: {
+      ...data.boards,
+      [boardId]: { ...board, title, updatedAt: new Date() },
+    },
+  }
+}
+
+export function deleteColumn(data: BoardData, columnId: string): BoardData {
+  const column = data.columns[columnId]
+  if (!column) return data
+
+  const remainingColumns: Record<string, Column> = {}
+  for (const key in data.columns) {
+    if (key !== columnId) {
+      remainingColumns[key] = data.columns[key]
+    }
+  }
+
+  const remainingCards: Record<string, Card> = {}
+  for (const key in data.cards) {
+    if (data.cards[key].columnId !== columnId) {
+      remainingCards[key] = data.cards[key]
+    }
+  }
+
+  const board = data.boards[column.boardId]
+
+  return {
+    ...data,
+    columns: remainingColumns,
+    cards: remainingCards,
+    boards: {
+      ...data.boards,
+      [column.boardId]: {
+        ...board,
+        columnIds: board.columnIds.filter((id) => id !== columnId),
+        updatedAt: new Date(),
+      },
+    },
+  }
+}
+
+export function editColumnTitle(
+  data: BoardData,
+  columnId: string,
+  title: string
+): BoardData {
+  const column = data.columns[columnId]
+  if (!column) return data
+
+  return {
+    ...data,
+    columns: {
+      ...data.columns,
+      [columnId]: { ...column, title, updatedAt: new Date() },
+    },
+  }
+}

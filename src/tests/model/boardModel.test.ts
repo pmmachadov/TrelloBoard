@@ -12,6 +12,10 @@ import {
   reorderColumns,
   deleteCard,
   editCardTitle,
+  deleteBoard,
+  editBoardTitle,
+  deleteColumn,
+  editColumnTitle,
 } from '../../model/boardModel'
 
 describe('boardModel', () => {
@@ -236,6 +240,79 @@ describe('boardModel', () => {
 
     it('returns original data if card does not exist', () => {
       const data = editCardTitle(emptyData, 'missing', 'New')
+      expect(data).toEqual(emptyData)
+    })
+  })
+
+  describe('deleteBoard', () => {
+    it('removes the board and its columns and cards', () => {
+      const board = createBoard('My Board')
+      let data = addBoard(emptyData, board)
+      const column = createColumn(board.id, 'To Do')
+      data = addColumn(data, board.id, column)
+      const card = createCard(column.id, 'Task')
+      data = addCard(data, column.id, card)
+
+      data = deleteBoard(data, board.id)
+      expect(data.boards[board.id]).toBeUndefined()
+      expect(data.boardIds).not.toContain(board.id)
+      expect(data.columns[column.id]).toBeUndefined()
+      expect(data.cards[card.id]).toBeUndefined()
+    })
+
+    it('returns original data if board does not exist', () => {
+      const data = deleteBoard(emptyData, 'missing')
+      expect(data).toEqual(emptyData)
+    })
+  })
+
+  describe('editBoardTitle', () => {
+    it('updates the board title', () => {
+      const board = createBoard('Old')
+      let data = addBoard(emptyData, board)
+      data = editBoardTitle(data, board.id, 'New')
+      expect(data.boards[board.id].title).toBe('New')
+    })
+
+    it('returns original data if board does not exist', () => {
+      const data = editBoardTitle(emptyData, 'missing', 'New')
+      expect(data).toEqual(emptyData)
+    })
+  })
+
+  describe('deleteColumn', () => {
+    it('removes the column and its cards from the board', () => {
+      const board = createBoard('My Board')
+      let data = addBoard(emptyData, board)
+      const column = createColumn(board.id, 'To Do')
+      data = addColumn(data, board.id, column)
+      const card = createCard(column.id, 'Task')
+      data = addCard(data, column.id, card)
+
+      data = deleteColumn(data, column.id)
+      expect(data.columns[column.id]).toBeUndefined()
+      expect(data.cards[card.id]).toBeUndefined()
+      expect(data.boards[board.id].columnIds).not.toContain(column.id)
+    })
+
+    it('returns original data if column does not exist', () => {
+      const data = deleteColumn(emptyData, 'missing')
+      expect(data).toEqual(emptyData)
+    })
+  })
+
+  describe('editColumnTitle', () => {
+    it('updates the column title', () => {
+      const board = createBoard('My Board')
+      let data = addBoard(emptyData, board)
+      const column = createColumn(board.id, 'Old')
+      data = addColumn(data, board.id, column)
+      data = editColumnTitle(data, column.id, 'New')
+      expect(data.columns[column.id].title).toBe('New')
+    })
+
+    it('returns original data if column does not exist', () => {
+      const data = editColumnTitle(emptyData, 'missing', 'New')
       expect(data).toEqual(emptyData)
     })
   })
