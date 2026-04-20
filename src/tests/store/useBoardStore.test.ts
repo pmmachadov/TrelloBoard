@@ -1,140 +1,161 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useBoardStore } from '../../store/useBoardStore'
+import { createBoard, createColumn, createCard } from '../../model/boardModel'
+
+function resetStore() {
+  useBoardStore.setState({
+    boards: {},
+    columns: {},
+    cards: {},
+    boardIds: [],
+    activeBoardId: null,
+  })
+}
 
 describe('useBoardStore', () => {
   beforeEach(() => {
-    useBoardStore.setState({
-      boards: {},
-      columns: {},
-      cards: {},
-      boardIds: [],
-    })
+    resetStore()
   })
 
-  it('adds a board', () => {
-    const board = useBoardStore.getState().addBoard('My Board')
-    expect(useBoardStore.getState().boards[board.id].title).toBe('My Board')
-    expect(useBoardStore.getState().boardIds).toContain(board.id)
-  })
-
-  it('deletes a board and its children', () => {
+  it('should start with empty state', () => {
     const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const column = state.addColumn(board.id, 'To Do')
-    const card = state.addCard(column.id, 'Task')
-
-    state.deleteBoard(board.id)
-
-    expect(useBoardStore.getState().boards[board.id]).toBeUndefined()
-    expect(useBoardStore.getState().columns[column.id]).toBeUndefined()
-    expect(useBoardStore.getState().cards[card.id]).toBeUndefined()
+    expect(state.boards).toEqual({})
+    expect(state.columns).toEqual({})
+    expect(state.cards).toEqual({})
+    expect(state.boardIds).toEqual([])
+    expect(state.activeBoardId).toBeNull()
   })
 
-  it('renames a board', () => {
+  it('should add a board', () => {
+    const board = createBoard('My Board')
+    useBoardStore.getState().addBoard(board)
+
     const state = useBoardStore.getState()
-    const board = state.addBoard('Old')
-    state.renameBoard(board.id, 'New')
-    expect(useBoardStore.getState().boards[board.id].title).toBe('New')
+    expect(state.boards[board.id]).toEqual(board)
+    expect(state.boardIds).toContain(board.id)
   })
 
-  it('adds a column', () => {
+  it('should add a column to a board', () => {
+    const board = createBoard('My Board')
+    useBoardStore.getState().addBoard(board)
+
+    const column = createColumn(board.id, 'To Do')
+    useBoardStore.getState().addColumn(board.id, column)
+
     const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const column = state.addColumn(board.id, 'To Do')
-    expect(useBoardStore.getState().columns[column.id].title).toBe('To Do')
-    expect(useBoardStore.getState().boards[board.id].columnIds).toContain(
-      column.id
-    )
+    expect(state.columns[column.id]).toEqual(column)
+    expect(state.boards[board.id].columnIds).toContain(column.id)
   })
 
-  it('deletes a column and its cards', () => {
+  it('should add a card to a column', () => {
+    const board = createBoard('My Board')
+    useBoardStore.getState().addBoard(board)
+
+    const column = createColumn(board.id, 'To Do')
+    useBoardStore.getState().addColumn(board.id, column)
+
+    const card = createCard(column.id, 'Task A')
+    useBoardStore.getState().addCard(column.id, card)
+
     const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const column = state.addColumn(board.id, 'To Do')
-    const card = state.addCard(column.id, 'Task')
-    state.deleteColumn(column.id)
-    expect(useBoardStore.getState().columns[column.id]).toBeUndefined()
-    expect(useBoardStore.getState().cards[card.id]).toBeUndefined()
+    expect(state.cards[card.id]).toEqual(card)
+    expect(state.columns[column.id].cardIds).toContain(card.id)
   })
 
-  it('renames a column', () => {
+  it('should move a card between columns', () => {
+    const board = createBoard('My Board')
+    useBoardStore.getState().addBoard(board)
+
+    const colA = createColumn(board.id, 'To Do')
+    const colB = createColumn(board.id, 'Done')
+    useBoardStore.getState().addColumn(board.id, colA)
+    useBoardStore.getState().addColumn(board.id, colB)
+
+    const card = createCard(colA.id, 'Task')
+    useBoardStore.getState().addCard(colA.id, card)
+
+    useBoardStore.getState().moveCardBetweenColumns(colA.id, colB.id, 0, 0)
+
     const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const column = state.addColumn(board.id, 'Old')
-    state.renameColumn(column.id, 'New')
-    expect(useBoardStore.getState().columns[column.id].title).toBe('New')
+    expect(state.columns[colA.id].cardIds).toEqual([])
+    expect(state.columns[colB.id].cardIds).toEqual([card.id])
+    expect(state.cards[card.id].columnId).toBe(colB.id)
   })
 
-  it('reorders columns', () => {
+  it('should reorder cards within a column', () => {
+    const board = createBoard('My Board')
+    useBoardStore.getState().addBoard(board)
+
+    const column = createColumn(board.id, 'To Do')
+    useBoardStore.getState().addColumn(board.id, column)
+
+    const cardA = createCard(column.id, 'A')
+    const cardB = createCard(column.id, 'B')
+    const cardC = createCard(column.id, 'C')
+    useBoardStore.getState().addCard(column.id, cardA)
+    useBoardStore.getState().addCard(column.id, cardB)
+    useBoardStore.getState().addCard(column.id, cardC)
+
+    useBoardStore.getState().moveCardWithinColumn(column.id, 0, 2)
+
     const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const colA = state.addColumn(board.id, 'A')
-    const colB = state.addColumn(board.id, 'B')
-    const colC = state.addColumn(board.id, 'C')
-    state.reorderColumn(board.id, 2, 0)
-    expect(useBoardStore.getState().boards[board.id].columnIds).toEqual([
-      colC.id,
-      colA.id,
-      colB.id,
-    ])
+    expect(state.columns[column.id].cardIds).toEqual([cardB.id, cardC.id, cardA.id])
   })
 
-  it('adds a card', () => {
+  it('should reorder columns within a board', () => {
+    const board = createBoard('My Board')
+    useBoardStore.getState().addBoard(board)
+
+    const colA = createColumn(board.id, 'A')
+    const colB = createColumn(board.id, 'B')
+    const colC = createColumn(board.id, 'C')
+    useBoardStore.getState().addColumn(board.id, colA)
+    useBoardStore.getState().addColumn(board.id, colB)
+    useBoardStore.getState().addColumn(board.id, colC)
+
+    useBoardStore.getState().reorderColumns(board.id, 2, 0)
+
     const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const column = state.addColumn(board.id, 'To Do')
-    const card = state.addCard(column.id, 'Task')
-    expect(useBoardStore.getState().cards[card.id].title).toBe('Task')
-    expect(useBoardStore.getState().columns[column.id].cardIds).toContain(
-      card.id
-    )
+    expect(state.boards[board.id].columnIds).toEqual([colC.id, colA.id, colB.id])
   })
 
-  it('deletes a card', () => {
+  it('should delete a card', () => {
+    const board = createBoard('My Board')
+    useBoardStore.getState().addBoard(board)
+
+    const column = createColumn(board.id, 'To Do')
+    useBoardStore.getState().addColumn(board.id, column)
+
+    const card = createCard(column.id, 'Task')
+    useBoardStore.getState().addCard(column.id, card)
+
+    useBoardStore.getState().deleteCard(card.id)
+
     const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const column = state.addColumn(board.id, 'To Do')
-    const card = state.addCard(column.id, 'Task')
-    state.deleteCard(card.id)
-    expect(useBoardStore.getState().cards[card.id]).toBeUndefined()
-    expect(
-      useBoardStore.getState().columns[column.id].cardIds
-    ).not.toContain(card.id)
+    expect(state.cards[card.id]).toBeUndefined()
+    expect(state.columns[column.id].cardIds).not.toContain(card.id)
   })
 
-  it('edits a card title', () => {
+  it('should edit a card title', () => {
+    const board = createBoard('My Board')
+    useBoardStore.getState().addBoard(board)
+
+    const column = createColumn(board.id, 'To Do')
+    useBoardStore.getState().addColumn(board.id, column)
+
+    const card = createCard(column.id, 'Old Title')
+    useBoardStore.getState().addCard(column.id, card)
+
+    useBoardStore.getState().editCardTitle(card.id, 'New Title')
+
     const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const column = state.addColumn(board.id, 'To Do')
-    const card = state.addCard(column.id, 'Old')
-    state.editCardTitle(card.id, 'New')
-    expect(useBoardStore.getState().cards[card.id].title).toBe('New')
+    expect(state.cards[card.id].title).toBe('New Title')
   })
 
-  it('moves a card within a column', () => {
-    const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const column = state.addColumn(board.id, 'To Do')
-    const cardA = state.addCard(column.id, 'A')
-    const cardB = state.addCard(column.id, 'B')
-    const cardC = state.addCard(column.id, 'C')
-    state.moveCardWithinColumn(column.id, 0, 2)
-    expect(useBoardStore.getState().columns[column.id].cardIds).toEqual([
-      cardB.id,
-      cardC.id,
-      cardA.id,
-    ])
-  })
+  it('should set active board id', () => {
+    useBoardStore.getState().setActiveBoardId('board-123')
 
-  it('moves a card between columns', () => {
     const state = useBoardStore.getState()
-    const board = state.addBoard('My Board')
-    const colA = state.addColumn(board.id, 'To Do')
-    const colB = state.addColumn(board.id, 'Done')
-    const card = state.addCard(colA.id, 'Task')
-    state.moveCardBetweenColumns(colA.id, colB.id, 0, 0)
-    expect(useBoardStore.getState().columns[colA.id].cardIds).toEqual([])
-    expect(useBoardStore.getState().columns[colB.id].cardIds).toEqual([card.id])
-    expect(useBoardStore.getState().cards[card.id].columnId).toBe(colB.id)
+    expect(state.activeBoardId).toBe('board-123')
   })
 })

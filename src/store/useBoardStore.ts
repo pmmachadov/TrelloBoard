@@ -1,34 +1,33 @@
 import { create } from 'zustand'
 import type { BoardData, Board, Column, Card } from '../types'
-import * as model from '../model/boardModel'
+import {
+  addBoard as addBoardModel,
+  addColumn as addColumnModel,
+  addCard as addCardModel,
+  moveCardBetweenColumns,
+  moveCardWithinColumn,
+  reorderColumns as reorderColumnsModel,
+  deleteCard as deleteCardModel,
+  editCardTitle as editCardTitleModel,
+} from '../model/boardModel'
 
 export type BoardStore = BoardData & {
-  // Board actions
-  addBoard: (title: string) => Board
-  deleteBoard: (boardId: string) => void
-  renameBoard: (boardId: string, title: string) => void
+  activeBoardId: string | null
 
-  // Column actions
-  addColumn: (boardId: string, title: string) => Column
-  deleteColumn: (columnId: string) => void
-  renameColumn: (columnId: string, title: string) => void
-  reorderColumn: (boardId: string, startIndex: number, endIndex: number) => void
-
-  // Card actions
-  addCard: (columnId: string, title: string) => Card
-  deleteCard: (cardId: string) => void
-  editCardTitle: (cardId: string, title: string) => void
-  moveCardWithinColumn: (
-    columnId: string,
-    startIndex: number,
-    endIndex: number
-  ) => void
+  setActiveBoardId: (id: string | null) => void
+  addBoard: (board: Board) => void
+  addColumn: (boardId: string, column: Column) => void
+  addCard: (columnId: string, card: Card) => void
+  moveCardWithinColumn: (columnId: string, startIndex: number, endIndex: number) => void
   moveCardBetweenColumns: (
     sourceColumnId: string,
     targetColumnId: string,
     sourceIndex: number,
     targetIndex: number
   ) => void
+  reorderColumns: (boardId: string, startIndex: number, endIndex: number) => void
+  deleteCard: (cardId: string) => void
+  editCardTitle: (cardId: string, title: string) => void
 }
 
 const initialState: BoardData = {
@@ -40,73 +39,33 @@ const initialState: BoardData = {
 
 export const useBoardStore = create<BoardStore>((set) => ({
   ...initialState,
+  activeBoardId: null,
 
-  addBoard: (title) => {
-    const board = model.createBoard(title)
-    set((state) => model.addBoard(state, board))
-    return board
-  },
+  setActiveBoardId: (id) => set({ activeBoardId: id }),
 
-  deleteBoard: (boardId) => {
-    set((state) => model.deleteBoard(state, boardId))
-  },
+  addBoard: (board) =>
+    set((state) => addBoardModel(state, board)),
 
-  renameBoard: (boardId, title) => {
-    set((state) => model.editBoardTitle(state, boardId, title))
-  },
+  addColumn: (boardId, column) =>
+    set((state) => addColumnModel(state, boardId, column)),
 
-  addColumn: (boardId, title) => {
-    const column = model.createColumn(boardId, title)
-    set((state) => model.addColumn(state, boardId, column))
-    return column
-  },
+  addCard: (columnId, card) =>
+    set((state) => addCardModel(state, columnId, card)),
 
-  deleteColumn: (columnId) => {
-    set((state) => model.deleteColumn(state, columnId))
-  },
+  moveCardWithinColumn: (columnId, startIndex, endIndex) =>
+    set((state) => moveCardWithinColumn(state, columnId, startIndex, endIndex)),
 
-  renameColumn: (columnId, title) => {
-    set((state) => model.editColumnTitle(state, columnId, title))
-  },
-
-  reorderColumn: (boardId, startIndex, endIndex) => {
-    set((state) => model.reorderColumns(state, boardId, startIndex, endIndex))
-  },
-
-  addCard: (columnId, title) => {
-    const card = model.createCard(columnId, title)
-    set((state) => model.addCard(state, columnId, card))
-    return card
-  },
-
-  deleteCard: (cardId) => {
-    set((state) => model.deleteCard(state, cardId))
-  },
-
-  editCardTitle: (cardId, title) => {
-    set((state) => model.editCardTitle(state, cardId, title))
-  },
-
-  moveCardWithinColumn: (columnId, startIndex, endIndex) => {
+  moveCardBetweenColumns: (sourceColumnId, targetColumnId, sourceIndex, targetIndex) =>
     set((state) =>
-      model.moveCardWithinColumn(state, columnId, startIndex, endIndex)
-    )
-  },
+      moveCardBetweenColumns(state, sourceColumnId, targetColumnId, sourceIndex, targetIndex)
+    ),
 
-  moveCardBetweenColumns: (
-    sourceColumnId,
-    targetColumnId,
-    sourceIndex,
-    targetIndex
-  ) => {
-    set((state) =>
-      model.moveCardBetweenColumns(
-        state,
-        sourceColumnId,
-        targetColumnId,
-        sourceIndex,
-        targetIndex
-      )
-    )
-  },
+  reorderColumns: (boardId, startIndex, endIndex) =>
+    set((state) => reorderColumnsModel(state, boardId, startIndex, endIndex)),
+
+  deleteCard: (cardId) =>
+    set((state) => deleteCardModel(state, cardId)),
+
+  editCardTitle: (cardId, title) =>
+    set((state) => editCardTitleModel(state, cardId, title)),
 }))
