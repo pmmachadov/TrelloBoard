@@ -10,13 +10,18 @@ import {
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import { useBoardStore } from '../../store/useBoardStore'
 import { createBoard, createColumn, createCard } from '../../model/boardModel'
+import { useAutoSave } from '../../controller/useAutoSave'
 import SortableColumn from '../components/SortableColumn'
+import SaveIndicator from '../components/SaveIndicator'
 
 function BoardPage() {
+  useAutoSave()
+
   const activeBoardId = useBoardStore((state) => state.activeBoardId)
   const boards = useBoardStore((state) => state.boards)
   const boardIds = useBoardStore((state) => state.boardIds)
   const columns = useBoardStore((state) => state.columns)
+  const isLoaded = useBoardStore((state) => state.isLoaded)
   const addBoard = useBoardStore((state) => state.addBoard)
   const addColumn = useBoardStore((state) => state.addColumn)
   const addCard = useBoardStore((state) => state.addCard)
@@ -34,7 +39,7 @@ function BoardPage() {
   )
 
   useEffect(() => {
-    if (boardIds.length > 0) return
+    if (!isLoaded || boardIds.length > 0) return
 
     const board = createBoard('Project Board')
     addBoard(board)
@@ -55,7 +60,7 @@ function BoardPage() {
     addCard(todo.id, card2)
     addCard(inProgress.id, card3)
     addCard(done.id, card4)
-  }, [boardIds.length, addBoard, addColumn, addCard, setActiveBoardId])
+  }, [isLoaded, boardIds.length, addBoard, addColumn, addCard, setActiveBoardId])
 
   const board = activeBoardId ? boards[activeBoardId] : null
   const boardColumns = board
@@ -127,9 +132,19 @@ function BoardPage() {
         p: 2,
       }}
     >
-      <Typography variant="h4" sx={{ mb: 2, fontWeight: 700 }}>
-        {board?.title ?? 'Loading...'}
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mb: 2,
+        }}
+      >
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          {board?.title ?? 'Loading...'}
+        </Typography>
+        <SaveIndicator />
+      </Box>
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <SortableContext

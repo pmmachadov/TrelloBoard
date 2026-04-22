@@ -9,6 +9,10 @@ function resetStore() {
     cards: {},
     boardIds: [],
     activeBoardId: null,
+    undoStack: [],
+    redoStack: [],
+    isSaving: false,
+    isLoaded: true,
   })
 }
 
