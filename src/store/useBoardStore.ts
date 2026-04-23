@@ -21,6 +21,7 @@ export type BoardStore = BoardData & {
   redoStack: HistorySnapshot[]
   isSaving: boolean
   isLoaded: boolean
+  selectedCardId: string | null
 
   setActiveBoardId: (id: string | null) => void
   undo: () => void
@@ -28,6 +29,7 @@ export type BoardStore = BoardData & {
   setIsSaving: (value: boolean) => void
   setIsLoaded: (value: boolean) => void
   loadData: (data: BoardData) => void
+  selectCard: (cardId: string | null) => void
   addBoard: (board: Board) => void
   addColumn: (boardId: string, column: Column) => void
   addCard: (columnId: string, card: Card) => void
@@ -41,6 +43,10 @@ export type BoardStore = BoardData & {
   reorderColumns: (boardId: string, startIndex: number, endIndex: number) => void
   deleteCard: (cardId: string) => void
   editCardTitle: (cardId: string, title: string) => void
+  moveSelectedCardUp: () => void
+  moveSelectedCardDown: () => void
+  moveSelectedCardLeft: () => void
+  moveSelectedCardRight: () => void
 }
 
 const initialState: BoardData = {
@@ -66,6 +72,7 @@ export const useBoardStore = create<BoardStore>((set) => ({
   redoStack: [],
   isSaving: false,
   isLoaded: false,
+  selectedCardId: null,
 
   setActiveBoardId: (id) => set({ activeBoardId: id }),
 
@@ -83,6 +90,8 @@ export const useBoardStore = create<BoardStore>((set) => ({
       redoStack: [],
     })),
 
+  selectCard: (cardId) => set({ selectedCardId: cardId }),
+
   undo: () =>
     set((state) => {
       if (state.undoStack.length === 0) return state
@@ -98,6 +107,7 @@ export const useBoardStore = create<BoardStore>((set) => ({
         activeBoardId: state.activeBoardId,
         isSaving: state.isSaving,
         isLoaded: state.isLoaded,
+        selectedCardId: state.selectedCardId,
       }
     }),
 
@@ -116,6 +126,7 @@ export const useBoardStore = create<BoardStore>((set) => ({
         activeBoardId: state.activeBoardId,
         isSaving: state.isSaving,
         isLoaded: state.isLoaded,
+        selectedCardId: state.selectedCardId,
       }
     }),
 
@@ -192,6 +203,7 @@ export const useBoardStore = create<BoardStore>((set) => ({
         ...deleteCardModel(state, cardId),
         undoStack: [...state.undoStack, snapshot].slice(-HISTORY_LIMIT),
         redoStack: [],
+        selectedCardId: state.selectedCardId === cardId ? null : state.selectedCardId,
       }
     }),
 
@@ -200,6 +212,92 @@ export const useBoardStore = create<BoardStore>((set) => ({
       const snapshot = takeSnapshot(state)
       return {
         ...editCardTitleModel(state, cardId, title),
+        undoStack: [...state.undoStack, snapshot].slice(-HISTORY_LIMIT),
+        redoStack: [],
+      }
+    }),
+
+  moveSelectedCardUp: () =>
+    set((state) => {
+      if (!state.selectedCardId) return state
+      const card = state.cards[state.selectedCardId]
+      if (!card) return state
+      const column = state.columns[card.columnId]
+      const index = column.cardIds.indexOf(state.selectedCardId)
+      if (index <= 0) return state
+      const snapshot = takeSnapshot(state)
+      return {
+        ...moveCardWithinColumn(state, card.columnId, index, index - 1),
+        undoStack: [...state.undoStack, snapshot].slice(-HISTORY_LIMIT),
+        redoStack: [],
+      }
+    }),
+
+  moveSelectedCardDown: () =>
+    set((state) => {
+      if (!state.selectedCardId) return state
+      const card = state.cards[state.selectedCardId]
+      if (!card) return state
+      const column = state.columns[card.columnId]
+      const index = column.cardIds.indexOf(state.selectedCardId)
+      if (index === -1 || index >= column.cardIds.length - 1) return state
+      const snapshot = takeSnapshot(state)
+      return {
+        ...moveCardWithinColumn(state, card.columnId, index, index + 1),
+        undoStack: [...state.undoStack, snapshot].slice(-HISTORY_LIMIT),
+        redoStack: [],
+      }
+    }),
+
+  moveSelectedCardLeft: () =>
+    set((state) => {
+      if (!state.selectedCardId) return state
+      const card = state.cards[state.selectedCardId]
+      if (!card) return state
+      const board = state.boards[card.columnId]
+      if (!board) return state
+
+      const boardId = Object.values(state.boards).find((b) =>
+        b.columnIds.includes(card.columnId)
+      )?.id
+      if (!boardId) return state
+
+      const columnIndex = state.boards[boardId].columnIds.indexOf(card.columnId)
+      if (columnIndex <= 0) return state
+
+      const targetColumnId = state.boards[boardId].columnIds[columnIndex - 1]
+      const sourceIndex = state.columns[card.columnId].cardIds.indexOf(state.selectedCardId)
+      const targetIndex = state.columns[targetColumnId].cardIds.length
+
+      const snapshot = takeSnapshot(state)
+      return {
+        ...moveCardBetweenColumns(state, card.columnId, targetColumnId, sourceIndex, targetIndex),
+        undoStack: [...state.undoStack, snapshot].slice(-HISTORY_LIMIT),
+        redoStack: [],
+      }
+    }),
+
+  moveSelectedCardRight: () =>
+    set((state) => {
+      if (!state.selectedCardId) return state
+      const card = state.cards[state.selectedCardId]
+      if (!card) return state
+
+      const boardId = Object.values(state.boards).find((b) =>
+        b.columnIds.includes(card.columnId)
+      )?.id
+      if (!boardId) return state
+
+      const columnIndex = state.boards[boardId].columnIds.indexOf(card.columnId)
+      if (columnIndex === -1 || columnIndex >= state.boards[boardId].columnIds.length - 1) return state
+
+      const targetColumnId = state.boards[boardId].columnIds[columnIndex + 1]
+      const sourceIndex = state.columns[card.columnId].cardIds.indexOf(state.selectedCardId)
+      const targetIndex = state.columns[targetColumnId].cardIds.length
+
+      const snapshot = takeSnapshot(state)
+      return {
+        ...moveCardBetweenColumns(state, card.columnId, targetColumnId, sourceIndex, targetIndex),
         undoStack: [...state.undoStack, snapshot].slice(-HISTORY_LIMIT),
         redoStack: [],
       }

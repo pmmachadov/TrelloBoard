@@ -13,6 +13,7 @@ function resetStore() {
     redoStack: [],
     isSaving: false,
     isLoaded: true,
+    selectedCardId: null,
   })
 }
 

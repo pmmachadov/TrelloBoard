@@ -12,6 +12,9 @@ function Card({ card }: CardProps) {
   const [editValue, setEditValue] = useState(card.title)
   const inputRef = useRef<HTMLInputElement>(null)
   const editCardTitle = useBoardStore((state) => state.editCardTitle)
+  const selectCard = useBoardStore((state) => state.selectCard)
+  const selectedCardId = useBoardStore((state) => state.selectedCardId)
+  const isSelected = selectedCardId === card.id
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -65,11 +68,17 @@ function Card({ card }: CardProps) {
       sx={{
         p: 1.5,
         cursor: 'pointer',
+        border: isSelected ? 2 : 0,
+        borderColor: 'primary.main',
         '&:hover': {
           bgcolor: 'action.hover',
         },
       }}
-      onClick={() => setIsEditing(true)}
+      onClick={(e) => {
+        e.stopPropagation()
+        selectCard(card.id)
+      }}
+      onDoubleClick={() => setIsEditing(true)}
     >
       <Typography variant="body2">{card.title}</Typography>
     </Paper>

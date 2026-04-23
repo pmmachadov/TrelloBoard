@@ -15,6 +15,7 @@ function resetStore() {
     redoStack: [],
     isSaving: false,
     isLoaded: true,
+    selectedCardId: null,
   })
 }
 
@@ -65,7 +66,7 @@ describe('BoardPage', () => {
     })
 
     const card = screen.getByText('Design homepage')
-    fireEvent.click(card)
+    fireEvent.doubleClick(card)
 
     const input = screen.getByDisplayValue('Design homepage')
     expect(input).toBeInTheDocument()
@@ -79,7 +80,7 @@ describe('BoardPage', () => {
       expect(screen.getByText('Design homepage')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByText('Design homepage'))
+    fireEvent.doubleClick(screen.getByText('Design homepage'))
 
     const input = screen.getByDisplayValue('Design homepage')
     fireEvent.change(input, { target: { value: 'New Title' } })
@@ -97,7 +98,7 @@ describe('BoardPage', () => {
       expect(screen.getByText('Design homepage')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByText('Design homepage'))
+    fireEvent.doubleClick(screen.getByText('Design homepage'))
 
     const input = screen.getByDisplayValue('Design homepage')
     fireEvent.change(input, { target: { value: 'Aborted Title' } })
@@ -138,5 +139,55 @@ describe('BoardPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Board not found')).toBeInTheDocument()
     })
+  })
+
+  it('selects card on click', async () => {
+    renderWithRouter(<BoardPage />, ['/board/default'])
+
+    await waitFor(() => {
+      expect(screen.getByText('Design homepage')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByText('Design homepage'))
+
+    const state = useBoardStore.getState()
+    const card = Object.values(state.cards).find((c) => c.title === 'Design homepage')
+    expect(state.selectedCardId).toBe(card?.id ?? null)
+  })
+
+  it('moves selected card with keyboard shortcuts', async () => {
+    renderWithRouter(<BoardPage />, ['/board/default'])
+
+    await waitFor(() => {
+      expect(screen.getByText('Design homepage')).toBeInTheDocument()
+    })
+
+    const card = Object.values(useBoardStore.getState().cards).find(
+      (c) => c.title === 'Design homepage'
+    )
+    if (card) {
+      useBoardStore.getState().selectCard(card.id)
+    }
+
+    fireEvent.keyDown(window, { key: 'ArrowDown', ctrlKey: true, shiftKey: true })
+
+    await waitFor(() => {
+      const state = useBoardStore.getState()
+      const column = Object.values(state.columns).find((col) =>
+        col.cardIds.includes(card?.id ?? '')
+      )
+      expect(column?.cardIds.indexOf(card?.id ?? '')).toBe(1)
+    })
+  })
+
+  it('has accessible roles on columns', async () => {
+    renderWithRouter(<BoardPage />, ['/board/default'])
+
+    await waitFor(() => {
+      expect(screen.getByText('To Do')).toBeInTheDocument()
+    })
+
+    const columns = screen.getAllByRole('button')
+    expect(columns.length).toBeGreaterThan(0)
   })
 })

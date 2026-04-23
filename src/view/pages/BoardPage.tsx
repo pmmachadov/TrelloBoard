@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Box, Typography } from '@mui/material'
 import {
@@ -12,11 +12,16 @@ import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortabl
 import { useBoardStore } from '../../store/useBoardStore'
 import { createBoard, createColumn, createCard } from '../../model/boardModel'
 import { useAutoSave } from '../../controller/useAutoSave'
+import { useKeyboardShortcuts } from '../../controller/useKeyboardShortcuts'
 import SortableColumn from '../components/SortableColumn'
 import SaveIndicator from '../components/SaveIndicator'
+import CommandPalette from '../components/CommandPalette'
 
 function BoardPage() {
   useAutoSave()
+
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  useKeyboardShortcuts(() => setPaletteOpen(true))
 
   const { boardId } = useParams<{ boardId: string }>()
   const navigate = useNavigate()
@@ -31,6 +36,7 @@ function BoardPage() {
   const moveCardWithinColumn = useBoardStore((state) => state.moveCardWithinColumn)
   const moveCardBetweenColumns = useBoardStore((state) => state.moveCardBetweenColumns)
   const reorderColumns = useBoardStore((state) => state.reorderColumns)
+  const selectCard = useBoardStore((state) => state.selectCard)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -152,6 +158,7 @@ function BoardPage() {
         bgcolor: 'background.default',
         p: 2,
       }}
+      onClick={() => selectCard(null)}
     >
       <Box
         sx={{
@@ -186,6 +193,8 @@ function BoardPage() {
           </Box>
         </SortableContext>
       </DndContext>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </Box>
   )
 }
