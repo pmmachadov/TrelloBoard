@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import BoardPage from '../../view/pages/BoardPage'
 import { useBoardStore } from '../../store/useBoardStore'
 
@@ -17,13 +18,23 @@ function resetStore() {
   })
 }
 
+function renderWithRouter(ui: React.ReactElement, initialEntries: string[] = ['/']) {
+  return render(
+    <MemoryRouter initialEntries={initialEntries}>
+      <Routes>
+        <Route path="/board/:boardId" element={ui} />
+      </Routes>
+    </MemoryRouter>
+  )
+}
+
 describe('BoardPage', () => {
   beforeEach(() => {
     resetStore()
   })
 
-  it('renders board title and columns', async () => {
-    render(<BoardPage />)
+  it('renders board title and columns from URL', async () => {
+    renderWithRouter(<BoardPage />, ['/board/default'])
 
     await waitFor(() => {
       expect(screen.getByText('Project Board')).toBeInTheDocument()
@@ -35,7 +46,7 @@ describe('BoardPage', () => {
   })
 
   it('renders cards inside columns', async () => {
-    render(<BoardPage />)
+    renderWithRouter(<BoardPage />, ['/board/default'])
 
     await waitFor(() => {
       expect(screen.getByText('Design homepage')).toBeInTheDocument()
@@ -47,7 +58,7 @@ describe('BoardPage', () => {
   })
 
   it('switches card to editing mode on click', async () => {
-    render(<BoardPage />)
+    renderWithRouter(<BoardPage />, ['/board/default'])
 
     await waitFor(() => {
       expect(screen.getByText('Design homepage')).toBeInTheDocument()
@@ -62,7 +73,7 @@ describe('BoardPage', () => {
   })
 
   it('saves card title on Enter', async () => {
-    render(<BoardPage />)
+    renderWithRouter(<BoardPage />, ['/board/default'])
 
     await waitFor(() => {
       expect(screen.getByText('Design homepage')).toBeInTheDocument()
@@ -80,7 +91,7 @@ describe('BoardPage', () => {
   })
 
   it('cancels card edit on Escape', async () => {
-    render(<BoardPage />)
+    renderWithRouter(<BoardPage />, ['/board/default'])
 
     await waitFor(() => {
       expect(screen.getByText('Design homepage')).toBeInTheDocument()
@@ -100,7 +111,7 @@ describe('BoardPage', () => {
   })
 
   it('renders columns with sortable attributes', async () => {
-    render(<BoardPage />)
+    renderWithRouter(<BoardPage />, ['/board/default'])
 
     await waitFor(() => {
       expect(screen.getByText('To Do')).toBeInTheDocument()
@@ -111,7 +122,7 @@ describe('BoardPage', () => {
   })
 
   it('renders cards with sortable attributes', async () => {
-    render(<BoardPage />)
+    renderWithRouter(<BoardPage />, ['/board/default'])
 
     await waitFor(() => {
       expect(screen.getByText('Design homepage')).toBeInTheDocument()
@@ -119,5 +130,13 @@ describe('BoardPage', () => {
 
     const card = screen.getByText('Design homepage').closest('[role="button"]')
     expect(card).toBeInTheDocument()
+  })
+
+  it('shows not found for invalid board id', async () => {
+    renderWithRouter(<BoardPage />, ['/board/invalid-id'])
+
+    await waitFor(() => {
+      expect(screen.getByText('Board not found')).toBeInTheDocument()
+    })
   })
 })

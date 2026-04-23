@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Box, Typography } from '@mui/material'
 import {
   DndContext,
@@ -17,7 +18,9 @@ import SaveIndicator from '../components/SaveIndicator'
 function BoardPage() {
   useAutoSave()
 
-  const activeBoardId = useBoardStore((state) => state.activeBoardId)
+  const { boardId } = useParams<{ boardId: string }>()
+  const navigate = useNavigate()
+
   const boards = useBoardStore((state) => state.boards)
   const boardIds = useBoardStore((state) => state.boardIds)
   const columns = useBoardStore((state) => state.columns)
@@ -25,7 +28,6 @@ function BoardPage() {
   const addBoard = useBoardStore((state) => state.addBoard)
   const addColumn = useBoardStore((state) => state.addColumn)
   const addCard = useBoardStore((state) => state.addCard)
-  const setActiveBoardId = useBoardStore((state) => state.setActiveBoardId)
   const moveCardWithinColumn = useBoardStore((state) => state.moveCardWithinColumn)
   const moveCardBetweenColumns = useBoardStore((state) => state.moveCardBetweenColumns)
   const reorderColumns = useBoardStore((state) => state.reorderColumns)
@@ -39,30 +41,33 @@ function BoardPage() {
   )
 
   useEffect(() => {
-    if (!isLoaded || boardIds.length > 0) return
+    if (!isLoaded) return
 
-    const board = createBoard('Project Board')
-    addBoard(board)
-    setActiveBoardId(board.id)
+    if (boardId === 'default' && boardIds.length === 0) {
+      const board = createBoard('Project Board')
+      addBoard(board)
 
-    const todo = createColumn(board.id, 'To Do')
-    const inProgress = createColumn(board.id, 'In Progress')
-    const done = createColumn(board.id, 'Done')
-    addColumn(board.id, todo)
-    addColumn(board.id, inProgress)
-    addColumn(board.id, done)
+      const todo = createColumn(board.id, 'To Do')
+      const inProgress = createColumn(board.id, 'In Progress')
+      const done = createColumn(board.id, 'Done')
+      addColumn(board.id, todo)
+      addColumn(board.id, inProgress)
+      addColumn(board.id, done)
 
-    const card1 = createCard(todo.id, 'Design homepage')
-    const card2 = createCard(todo.id, 'Setup CI/CD')
-    const card3 = createCard(inProgress.id, 'Implement auth')
-    const card4 = createCard(done.id, 'Project scaffold')
-    addCard(todo.id, card1)
-    addCard(todo.id, card2)
-    addCard(inProgress.id, card3)
-    addCard(done.id, card4)
-  }, [isLoaded, boardIds.length, addBoard, addColumn, addCard, setActiveBoardId])
+      const card1 = createCard(todo.id, 'Design homepage')
+      const card2 = createCard(todo.id, 'Setup CI/CD')
+      const card3 = createCard(inProgress.id, 'Implement auth')
+      const card4 = createCard(done.id, 'Project scaffold')
+      addCard(todo.id, card1)
+      addCard(todo.id, card2)
+      addCard(inProgress.id, card3)
+      addCard(done.id, card4)
 
-  const board = activeBoardId ? boards[activeBoardId] : null
+      navigate(`/board/${board.id}`, { replace: true })
+    }
+  }, [isLoaded, boardId, boardIds.length, addBoard, addColumn, addCard, navigate])
+
+  const board = boardId ? boards[boardId] : null
   const boardColumns = board
     ? board.columnIds.map((id) => columns[id]).filter(Boolean)
     : []
@@ -120,6 +125,22 @@ function BoardPage() {
         moveCardBetweenColumns(sourceColumnId, targetColumnId, sourceIndex, targetIndex)
       }
     }
+  }
+
+  if (!board && boardId !== 'default') {
+    return (
+      <Box
+        sx={{
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Typography variant="h5">Board not found</Typography>
+      </Box>
+    )
   }
 
   return (
