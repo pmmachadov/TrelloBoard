@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { BoardData, Board, Column, Card } from '../types'
+import type { BoardData, Board, Column, Card, Subtask } from '../types'
 import {
   addBoard as addBoardModel,
   addColumn as addColumnModel,
@@ -15,6 +15,8 @@ const HISTORY_LIMIT = 50
 
 type HistorySnapshot = BoardData
 
+export type ViewMode = 'board' | 'table' | 'calendar' | 'timeline'
+
 export type BoardStore = BoardData & {
   activeBoardId: string | null
   undoStack: HistorySnapshot[]
@@ -22,6 +24,10 @@ export type BoardStore = BoardData & {
   isSaving: boolean
   isLoaded: boolean
   selectedCardId: string | null
+  viewMode: ViewMode
+  searchQuery: string
+  zenMode: boolean
+  selectedCardIds: string[]
 
   setActiveBoardId: (id: string | null) => void
   undo: () => void
@@ -30,6 +36,11 @@ export type BoardStore = BoardData & {
   setIsLoaded: (value: boolean) => void
   loadData: (data: BoardData) => void
   selectCard: (cardId: string | null) => void
+  setViewMode: (mode: ViewMode) => void
+  setSearchQuery: (query: string) => void
+  setZenMode: (value: boolean) => void
+  toggleCardSelection: (cardId: string, multi: boolean) => void
+  clearCardSelection: () => void
   addBoard: (board: Board) => void
   addColumn: (boardId: string, column: Column) => void
   addCard: (columnId: string, card: Card) => void
@@ -47,6 +58,7 @@ export type BoardStore = BoardData & {
   moveSelectedCardDown: () => void
   moveSelectedCardLeft: () => void
   moveSelectedCardRight: () => void
+  toggleSubtask: (cardId: string, subtaskId: string) => void
 }
 
 const initialState: BoardData = {
@@ -73,6 +85,10 @@ export const useBoardStore = create<BoardStore>((set) => ({
   isSaving: false,
   isLoaded: false,
   selectedCardId: null,
+  viewMode: 'board',
+  searchQuery: '',
+  zenMode: false,
+  selectedCardIds: [],
 
   setActiveBoardId: (id) => set({ activeBoardId: id }),
 
@@ -92,6 +108,26 @@ export const useBoardStore = create<BoardStore>((set) => ({
 
   selectCard: (cardId) => set({ selectedCardId: cardId }),
 
+  setViewMode: (mode) => set({ viewMode: mode }),
+
+  setSearchQuery: (query) => set({ searchQuery: query }),
+
+  setZenMode: (value) => set({ zenMode: value }),
+
+  toggleCardSelection: (cardId, multi) =>
+    set((state) => {
+      if (!multi) {
+        return { selectedCardIds: [cardId] }
+      }
+      const exists = state.selectedCardIds.includes(cardId)
+      if (exists) {
+        return { selectedCardIds: state.selectedCardIds.filter((id) => id !== cardId) }
+      }
+      return { selectedCardIds: [...state.selectedCardIds, cardId] }
+    }),
+
+  clearCardSelection: () => set({ selectedCardIds: [] }),
+
   undo: () =>
     set((state) => {
       if (state.undoStack.length === 0) return state
@@ -108,6 +144,10 @@ export const useBoardStore = create<BoardStore>((set) => ({
         isSaving: state.isSaving,
         isLoaded: state.isLoaded,
         selectedCardId: state.selectedCardId,
+        viewMode: state.viewMode,
+        searchQuery: state.searchQuery,
+        zenMode: state.zenMode,
+        selectedCardIds: state.selectedCardIds,
       }
     }),
 
@@ -127,6 +167,10 @@ export const useBoardStore = create<BoardStore>((set) => ({
         isSaving: state.isSaving,
         isLoaded: state.isLoaded,
         selectedCardId: state.selectedCardId,
+        viewMode: state.viewMode,
+        searchQuery: state.searchQuery,
+        zenMode: state.zenMode,
+        selectedCardIds: state.selectedCardIds,
       }
     }),
 
@@ -204,6 +248,7 @@ export const useBoardStore = create<BoardStore>((set) => ({
         undoStack: [...state.undoStack, snapshot].slice(-HISTORY_LIMIT),
         redoStack: [],
         selectedCardId: state.selectedCardId === cardId ? null : state.selectedCardId,
+        selectedCardIds: state.selectedCardIds.filter((id) => id !== cardId),
       }
     }),
 
@@ -254,8 +299,6 @@ export const useBoardStore = create<BoardStore>((set) => ({
       if (!state.selectedCardId) return state
       const card = state.cards[state.selectedCardId]
       if (!card) return state
-      const board = state.boards[card.columnId]
-      if (!board) return state
 
       const boardId = Object.values(state.boards).find((b) =>
         b.columnIds.includes(card.columnId)
@@ -300,6 +343,21 @@ export const useBoardStore = create<BoardStore>((set) => ({
         ...moveCardBetweenColumns(state, card.columnId, targetColumnId, sourceIndex, targetIndex),
         undoStack: [...state.undoStack, snapshot].slice(-HISTORY_LIMIT),
         redoStack: [],
+      }
+    }),
+
+  toggleSubtask: (cardId, subtaskId) =>
+    set((state) => {
+      const card = state.cards[cardId]
+      if (!card) return state
+      const updatedSubtasks = card.subtasks.map((st) =>
+        st.id === subtaskId ? { ...st, completed: !st.completed } : st
+      )
+      return {
+        cards: {
+          ...state.cards,
+          [cardId]: { ...card, subtasks: updatedSubtasks, updatedAt: new Date() },
+        },
       }
     }),
 }))

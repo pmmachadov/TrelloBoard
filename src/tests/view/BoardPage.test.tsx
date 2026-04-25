@@ -16,6 +16,10 @@ function resetStore() {
     isSaving: false,
     isLoaded: true,
     selectedCardId: null,
+    viewMode: 'board',
+    searchQuery: '',
+    zenMode: false,
+    selectedCardIds: [],
   })
 }
 
