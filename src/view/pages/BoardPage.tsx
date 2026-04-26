@@ -223,7 +223,7 @@ function BoardPage() {
             }}
           >
             <Typography variant="h4" sx={{ fontWeight: 700 }}>
-              {board?.title ?? 'Loading...'}
+              {board?.title ?? ''}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <SearchBar />

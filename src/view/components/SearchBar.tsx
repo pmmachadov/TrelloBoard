@@ -24,7 +24,20 @@ function SearchBar() {
       value={searchQuery}
       onChange={(e) => setSearchQuery(e.target.value)}
       size="small"
-      sx={{ minWidth: 200 }}
+      sx={{
+        minWidth: 200,
+        '& .MuiOutlinedInput-root': {
+          '& fieldset': {
+            borderColor: 'grey.500',
+          },
+          '&:hover fieldset': {
+            borderColor: 'grey.300',
+          },
+          '&.Mui-focused fieldset': {
+            borderColor: 'primary.main',
+          },
+        },
+      }}
       helperText={results ? `${results.length} results` : ''}
     />
   )

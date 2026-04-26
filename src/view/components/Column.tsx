@@ -1,9 +1,11 @@
-import { useRef } from 'react'
-import { Paper, Typography, Box } from '@mui/material'
+import { useRef, useState } from 'react'
+import { Paper, Typography, Box, Button, TextField } from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Column as ColumnType } from '../../types'
 import { useBoardStore } from '../../store/useBoardStore'
+import { createCard } from '../../model/boardModel'
 import SortableCard from './SortableCard'
 
 interface ColumnProps {
@@ -11,7 +13,10 @@ interface ColumnProps {
 }
 
 function Column({ column }: ColumnProps) {
+  const [isAdding, setIsAdding] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
   const cards = useBoardStore((state) => state.cards)
+  const addCard = useBoardStore((state) => state.addCard)
   const columnCards = column.cardIds.map((id) => cards[id]).filter(Boolean)
   const parentRef = useRef<HTMLDivElement>(null)
 
@@ -24,6 +29,30 @@ function Column({ column }: ColumnProps) {
 
   const virtualItems = virtualizer.getVirtualItems()
   const useVirtual = virtualItems.length > 0 && columnCards.length > 10
+
+  const handleSave = () => {
+    const trimmed = newTitle.trim()
+    if (trimmed) {
+      const card = createCard(column.id, trimmed)
+      addCard(column.id, card)
+    }
+    setNewTitle('')
+    setIsAdding(false)
+  }
+
+  const handleCancel = () => {
+    setNewTitle('')
+    setIsAdding(false)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSave()
+    } else if (e.key === 'Escape') {
+      handleCancel()
+    }
+  }
 
   return (
     <Paper
@@ -49,7 +78,7 @@ function Column({ column }: ColumnProps) {
           flex: 1,
           overflowY: 'auto',
           px: 2,
-          pb: 2,
+          pb: 1,
         }}
       >
         <SortableContext
@@ -85,6 +114,31 @@ function Column({ column }: ColumnProps) {
             </Box>
           )}
         </SortableContext>
+      </Box>
+
+      <Box sx={{ px: 2, pb: 2, pt: 1 }}>
+        {isAdding ? (
+          <TextField
+            autoFocus
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleSave}
+            placeholder="Enter a title..."
+            size="small"
+            fullWidth
+          />
+        ) : (
+          <Button
+            fullWidth
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={() => setIsAdding(true)}
+            sx={{ justifyContent: 'flex-start' }}
+          >
+            Add a card
+          </Button>
+        )}
       </Box>
     </Paper>
   )
