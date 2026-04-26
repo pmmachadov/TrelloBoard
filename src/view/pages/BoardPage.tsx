@@ -23,6 +23,7 @@ import SearchBar from '../components/SearchBar'
 import TableView from '../components/TableView'
 import CalendarView from '../components/CalendarView'
 import TimelineView from '../components/TimelineView'
+import ImportExport from '../components/ImportExport'
 
 function BoardPage() {
   useAutoSave()
@@ -226,6 +227,7 @@ function BoardPage() {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <SearchBar />
+              <ImportExport />
               <IconButton onClick={() => setZenMode(!zenMode)} color="inherit">
                 {zenMode ? <ZenModeExitIcon /> : <ZenModeIcon />}
               </IconButton>
