@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Box, Button } from '@mui/material'
+import { Box, Button, Tooltip } from '@mui/material'
 import DownloadIcon from '@mui/icons-material/Download'
 import UploadIcon from '@mui/icons-material/Upload'
 import { useBoardStore } from '../../store/useBoardStore'
@@ -19,7 +19,7 @@ function ImportExport() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `trello-board-${new Date().toISOString().split('T')[0]}.json`
+    a.download = `kanban-board-${new Date().toISOString().split('T')[0]}.json`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -46,17 +46,21 @@ function ImportExport() {
 
   return (
     <Box sx={{ display: 'flex', gap: 1 }}>
-      <Button variant="outlined" size="small" startIcon={<DownloadIcon />} onClick={handleExport}>
-        Export
-      </Button>
-      <Button
-        variant="outlined"
-        size="small"
-        startIcon={<UploadIcon />}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        Import
-      </Button>
+      <Tooltip title="Download all boards, columns and cards as a .json file">
+        <Button variant="outlined" size="small" startIcon={<DownloadIcon />} onClick={handleExport}>
+          Export
+        </Button>
+      </Tooltip>
+      <Tooltip title="Upload a previously exported .json file to restore your boards">
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<UploadIcon />}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          Import
+        </Button>
+      </Tooltip>
       <input
         ref={fileInputRef}
         type="file"

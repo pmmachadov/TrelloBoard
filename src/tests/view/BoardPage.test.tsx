@@ -3,13 +3,28 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import BoardPage from '../../view/pages/BoardPage'
 import { useBoardStore } from '../../store/useBoardStore'
+import { createBoard, createColumn, createCard } from '../../model/boardModel'
 
 function resetStore() {
+  const board = { ...createBoard('Project Board'), id: 'default' }
+  const todo = createColumn(board.id, 'To Do')
+  const inProgress = createColumn(board.id, 'In Progress')
+  const done = createColumn(board.id, 'Done')
+  board.columnIds = [todo.id, inProgress.id, done.id]
+
+  const card1 = createCard(todo.id, 'Design homepage')
+  const card2 = createCard(todo.id, 'Setup CI/CD')
+  const card3 = createCard(inProgress.id, 'Implement auth')
+  const card4 = createCard(done.id, 'Project scaffold')
+  todo.cardIds = [card1.id, card2.id]
+  inProgress.cardIds = [card3.id]
+  done.cardIds = [card4.id]
+
   useBoardStore.setState({
-    boards: {},
-    columns: {},
-    cards: {},
-    boardIds: [],
+    boards: { [board.id]: board },
+    columns: { [todo.id]: todo, [inProgress.id]: inProgress, [done.id]: done },
+    cards: { [card1.id]: card1, [card2.id]: card2, [card3.id]: card3, [card4.id]: card4 },
+    boardIds: [board.id],
     activeBoardId: null,
     undoStack: [],
     redoStack: [],

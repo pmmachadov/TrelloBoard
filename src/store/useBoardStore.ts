@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { BoardData, Board, Column, Card, Subtask } from '../types'
+import type { BoardData, Board, Column, Card } from '../types'
 import {
   addBoard as addBoardModel,
   addColumn as addColumnModel,
@@ -8,7 +8,9 @@ import {
   moveCardWithinColumn,
   reorderColumns as reorderColumnsModel,
   deleteCard as deleteCardModel,
+  deleteColumn as deleteColumnModel,
   editCardTitle as editCardTitleModel,
+  generateId,
 } from '../model/boardModel'
 
 const HISTORY_LIMIT = 50
@@ -53,12 +55,16 @@ export type BoardStore = BoardData & {
   ) => void
   reorderColumns: (boardId: string, startIndex: number, endIndex: number) => void
   deleteCard: (cardId: string) => void
+  deleteColumn: (columnId: string) => void
   editCardTitle: (cardId: string, title: string) => void
   moveSelectedCardUp: () => void
   moveSelectedCardDown: () => void
   moveSelectedCardLeft: () => void
   moveSelectedCardRight: () => void
   toggleSubtask: (cardId: string, subtaskId: string) => void
+  toggleCardChecklist: (cardId: string) => void
+  addSubtask: (cardId: string, title: string) => void
+  deleteSubtask: (cardId: string, subtaskId: string) => void
 }
 
 const initialState: BoardData = {
@@ -252,6 +258,16 @@ export const useBoardStore = create<BoardStore>((set) => ({
       }
     }),
 
+  deleteColumn: (columnId) =>
+    set((state) => {
+      const snapshot = takeSnapshot(state)
+      return {
+        ...deleteColumnModel(state, columnId),
+        undoStack: [...state.undoStack, snapshot].slice(-HISTORY_LIMIT),
+        redoStack: [],
+      }
+    }),
+
   editCardTitle: (cardId, title) =>
     set((state) => {
       const snapshot = takeSnapshot(state)
@@ -357,6 +373,43 @@ export const useBoardStore = create<BoardStore>((set) => ({
         cards: {
           ...state.cards,
           [cardId]: { ...card, subtasks: updatedSubtasks, updatedAt: new Date() },
+        },
+      }
+    }),
+
+  toggleCardChecklist: (cardId) =>
+    set((state) => {
+      const card = state.cards[cardId]
+      if (!card) return state
+      return {
+        cards: {
+          ...state.cards,
+          [cardId]: { ...card, isChecklist: !card.isChecklist, updatedAt: new Date() },
+        },
+      }
+    }),
+
+  addSubtask: (cardId, title) =>
+    set((state) => {
+      const card = state.cards[cardId]
+      if (!card) return state
+      const newSubtask = { id: generateId(), title, completed: false }
+      return {
+        cards: {
+          ...state.cards,
+          [cardId]: { ...card, subtasks: [...card.subtasks, newSubtask], updatedAt: new Date() },
+        },
+      }
+    }),
+
+  deleteSubtask: (cardId, subtaskId) =>
+    set((state) => {
+      const card = state.cards[cardId]
+      if (!card) return state
+      return {
+        cards: {
+          ...state.cards,
+          [cardId]: { ...card, subtasks: card.subtasks.filter((st) => st.id !== subtaskId), updatedAt: new Date() },
         },
       }
     }),

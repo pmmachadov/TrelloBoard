@@ -16,6 +16,7 @@ import {
 import { Paper, Typography, Box, IconButton, Select, MenuItem, FormControl } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import Fuse from 'fuse.js'
 import { useBoardStore } from '../../store/useBoardStore'
 
 const MONTHS = [
@@ -47,12 +48,11 @@ function CalendarView() {
 
   const filteredCards = (dayCards: typeof cards[string][]) => {
     if (!searchQuery.trim()) return dayCards
-    const Fuse = require('fuse.js')
-    const fuse = new Fuse.default(dayCards, {
+    const fuse = new Fuse(dayCards, {
       keys: ['title'],
       threshold: 0.4,
     })
-    return fuse.search(searchQuery).map((r: { item: typeof cards[string] }) => r.item)
+    return fuse.search(searchQuery).map((r) => r.item)
   }
 
   const today = new Date()

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Paper, Typography, Box, LinearProgress } from '@mui/material'
 import { format, compareAsc } from 'date-fns'
+import Fuse from 'fuse.js'
 import { useBoardStore } from '../../store/useBoardStore'
 
 function TimelineView() {
@@ -10,12 +11,11 @@ function TimelineView() {
   const sortedCards = useMemo(() => {
     let list = Object.values(cards).filter((c) => c.dueDate)
     if (searchQuery.trim()) {
-      const Fuse = require('fuse.js')
-      const fuse = new Fuse.default(list, {
+      const fuse = new Fuse(list, {
         keys: ['title'],
         threshold: 0.4,
       })
-      list = fuse.search(searchQuery).map((r: { item: typeof cards[string] }) => r.item)
+      list = fuse.search(searchQuery).map((r) => r.item)
     }
     return list.sort((a, b) => compareAsc(new Date(a.dueDate!), new Date(b.dueDate!)))
   }, [cards, searchQuery])

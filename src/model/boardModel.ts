@@ -38,6 +38,7 @@ export function createCard(columnId: string, title: string): Card {
     labels: [],
     members: [],
     subtasks: [],
+    isChecklist: false,
     createdAt: now,
     updatedAt: now,
   }

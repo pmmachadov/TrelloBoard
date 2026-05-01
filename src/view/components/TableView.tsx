@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { DataGrid } from '@mui/x-data-grid'
+import Fuse from 'fuse.js'
 import { useBoardStore } from '../../store/useBoardStore'
 
 function TableView() {
@@ -10,12 +11,11 @@ function TableView() {
   const rows = useMemo(() => {
     const cardList = Object.values(cards)
     if (!searchQuery.trim()) return cardList
-    const Fuse = require('fuse.js')
-    const fuse = new Fuse.default(cardList, {
+    const fuse = new Fuse(cardList, {
       keys: ['title', 'description'],
       threshold: 0.4,
     })
-    return fuse.search(searchQuery).map((r: { item: typeof cards[string] }) => r.item)
+    return fuse.search(searchQuery).map((r) => r.item)
   }, [cards, searchQuery])
 
   const cols = [

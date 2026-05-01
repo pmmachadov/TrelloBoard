@@ -27,6 +27,7 @@ export const cardSchema = z.object({
   members: z.array(memberSchema),
   dueDate: z.string().datetime().nullable().optional().transform((v) => v ? new Date(v) : undefined),
   subtasks: z.array(subtaskSchema),
+  isChecklist: z.boolean().optional(),
   createdAt: z.string().datetime().transform((v) => new Date(v)),
   updatedAt: z.string().datetime().transform((v) => new Date(v)),
 })

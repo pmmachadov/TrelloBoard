@@ -25,6 +25,7 @@ export type Card = {
   members: Member[];
   dueDate?: Date;
   subtasks: Subtask[];
+  isChecklist?: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

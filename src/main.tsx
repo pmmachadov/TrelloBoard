@@ -8,6 +8,13 @@ import App from './App.tsx'
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
+    background: {
+      default: '#0d2818',
+      paper: '#1a4231',
+    },
+    primary: {
+      main: '#66bb6a',
+    },
   },
 })
 

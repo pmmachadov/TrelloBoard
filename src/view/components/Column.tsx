@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { Paper, Typography, Box, Button, TextField } from '@mui/material'
+import { Paper, Typography, Box, Button, TextField, IconButton, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import DeleteIcon from '@mui/icons-material/Delete'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Column as ColumnType } from '../../types'
@@ -17,7 +18,9 @@ function Column({ column }: ColumnProps) {
   const [newTitle, setNewTitle] = useState('')
   const cards = useBoardStore((state) => state.cards)
   const addCard = useBoardStore((state) => state.addCard)
+  const deleteColumn = useBoardStore((state) => state.deleteColumn)
   const columnCards = column.cardIds.map((id) => cards[id]).filter(Boolean)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const parentRef = useRef<HTMLDivElement>(null)
 
   const virtualizer = useVirtualizer({
@@ -64,12 +67,20 @@ function Column({ column }: ColumnProps) {
         flexDirection: 'column',
         maxHeight: '100%',
         bgcolor: 'background.paper',
+        borderRadius: 3,
       }}
     >
-      <Box sx={{ p: 2, pb: 1 }}>
+      <Box sx={{ p: 2, pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           {column.title}
         </Typography>
+        <IconButton
+          size="small"
+          sx={{ p: 0.2 }}
+          onClick={() => setConfirmOpen(true)}
+        >
+          <DeleteIcon sx={{ fontSize: 16 }} />
+        </IconButton>
       </Box>
 
       <Box
@@ -140,6 +151,27 @@ function Column({ column }: ColumnProps) {
           </Button>
         )}
       </Box>
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>Delete column?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete "{column.title}"? All {columnCards.length} cards inside will be removed. This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              deleteColumn(column.id)
+              setConfirmOpen(false)
+            }}
+            color="error"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   )
 }

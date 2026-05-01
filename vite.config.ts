@@ -8,9 +8,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'TrelloBoard',
-        short_name: 'TrelloBoard',
-        description: 'Advanced Trello clone with MVC architecture',
+        name: 'KanbanBoard',
+        short_name: 'KanbanBoard',
+        description: 'Advanced Kanban board with MVC architecture',
         theme_color: '#121212',
         background_color: '#121212',
         display: 'standalone',
@@ -32,9 +32,5 @@ export default defineConfig({
       },
     }),
   ],
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/tests/setupTests.ts'],
-  },
+
 })
